@@ -1,6 +1,0 @@
-Method = Update
-API_KEY = 
-Companies_IDs = 
-Categories_IDs = 
-Items= 
-
