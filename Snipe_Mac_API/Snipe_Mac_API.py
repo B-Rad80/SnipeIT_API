@@ -75,7 +75,7 @@ print("\n")
 print("Saving...\n ***This will OVERWITE ALL relavent files****")
 
 #Vars
-directory = os.getcwd() + "\Mac_Addresses"
+directory = os.getcwd() + "/Mac_Addresses"
 if not os.path.exists(directory):
     print("Creating Directory for Mac Addreses....")
     os.makedirs(directory)
