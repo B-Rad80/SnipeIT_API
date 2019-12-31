@@ -1,20 +1,5 @@
 #Brandon Roemer Generalized Assest Script
 
-#Bug list
-#Doesnt seperate by company but by category?,
-#   Fix via adding check and seperation in format output or api call
-
-#Test list
-#Tested with model name or model
-#tested with changed limits
-#NEEDS multiple categories check
-
-#needed features
-#GET integration is working
-#Expand Parsed Item options 
-#POST integration 
-
-
 import configparser
 import json
 import requests
@@ -39,15 +24,44 @@ def Get_API_Key(path = "../../API_KEY.key"):
 
 #Read in Config
 
+
 def Parse_Items(items):
+    other_items = ["deleted_at","purchase_date","last_checkout","expected_checkin","purchase_cost"]
     parsed_items = []
     for i in items:
         if i.lower() == "model" or i.lower() =="model name":
-            print("here?")
             parsed_items.append(("model","name"))
         elif i.lower() == "model id":
             parsed_items.append(("model","id"))
-        elif i.lower() == "id" or i.lower() == "name" or i.lower() == "asset_tag" or i.lower() == "serial":
+        elif i.lower() == "category" or i.lower() == "category name":
+            parsed_items.append(("category","name"))
+        elif i.lower() == "category id":
+            parsed_items.append(("category","id"))
+        elif i.lower() == "manufacturer name" or i.lower() == "manufacturer":
+            parsed_items.append(("manufacturer","name"))
+        elif i.lower() == "manufacturer id":
+            parsed_items.append(("manufacturer","id"))
+        elif i.lower() == "status_label" or i.lower() == "status_label name":
+            parsed_items.append(("status_label","name"))
+        elif i.lower() == "status_label id":
+            parsed_items.append(("status_label","id"))
+        elif i.lower() == "status_label status_meta":
+            parsed_items.append(("status_label","status_meta"))
+        elif i.lower() == "created_at" or i.lower() == "created_at formatted":
+            parsed_items.append(("created_at","formatted"))
+        elif i.lower() == "created_at datetime":
+            parsed_items.append(("created_at","datetime"))
+        elif i.lower() == "updated_at" or i.lower() == "updated_at formatted":
+            parsed_items.append(("updated_at","formatted"))
+        elif i.lower() == "updated_at datetime":
+            parsed_items.append(("updated_at","datetime"))
+
+        elif( i.lower() == "id" or i.lower() == "name" or i.lower() == "asset_tag" or i.lower() == "serial" 
+             or i.lower() == "model_number" or i.lower()== "supplier" or i.lower() == "notes" or i.lower()=="order_number" 
+             or i.lower() == "company" or i.lower() == "location" or i.lower() == "rtd_location" or i.lower == "image" 
+             or i.lower() == "assigned_to" or i.lower() == "warrenty_months" or i.lower() == "warrenty_expires"):
+            parsed_items.append([i.lower()])
+        elif(i.lower() in other_items):
             parsed_items.append([i.lower()])
         else:
             print("Item type not found" ,i, "check list of compatible items in the ReadMe")
@@ -78,8 +92,8 @@ def Read_Config(File_Name = 'config.ini'):
     if config["DEFAULT"]["Limit"] != '':
         try:
             limit = int(config["DEFAULT"]["Limit"]) 
-        except error:
-            print("Make sure limit is a number... Falling back on default value :", error)
+        except:
+            raise Exception("Make sure limit is a number... Falling back on default value :", error)
     else:
         print("Using Default Limit")
 
@@ -136,6 +150,7 @@ def API_CALL(param,key):
 def format_output(output,items):
     cleaned_output = []
     failures = []
+    companylist = []
     for fill in range(len(output)+1):
         cleaned_output.append("")
 
@@ -144,6 +159,13 @@ def format_output(output,items):
         for row in output[i]["rows"]:
             t_items = ""
             for k in items:
+                if (not row["company"] == None ):
+                    companylist.append(row["company"])
+                else:
+                    if (row["asset_tag"] == None):
+                        raise Exception("an ITEM has no company or asset_tag")
+                    else:
+                        raise Exception("ITEM:",  row["asset_tag"], "has no company!")
                 if len(k) == 1:
                     if(row[k[0]] == None):
                          t_items += "None,"
@@ -170,19 +192,19 @@ def format_output(output,items):
                     t_items = str(i["asset_tag"]) + "," + t_items + "\n"
                     failures.append(t_items)
             else:
-                temp.append(t_items[:-1] + "\n")
+                temp.append(t_items[:-1])
 
 
         cleaned_output[i] = temp
         #print("added ", temp, "to cleaned_output[", i,'] is now:', cleaned_output )
         cleaned_output[len(output)] = failures
         
-    return cleaned_output
+    return cleaned_output, companylist
 
 
 
          
-def save_files(output,param):
+def save_files(output,param, companylist):
 
     directory = os.getcwd() + "/Output/"
 
@@ -193,16 +215,34 @@ def save_files(output,param):
         except:
             raise Exception("failed to create directory with error")
 
+        print(output)
+    print(len(companylist))
+    print(len(output))
     try:
+        files = {}
+        ctr = 0 
         for i in range(len(param[2])):
-            file = open(directory + param[2][i] + ".txt", "w")
-            file.writelines(output[i])
-            file.close()
+            files[param[2][i]] = open(directory + param[2][i] + ".txt", "w")
+
+        for j in range(0, len(output)-1):
+            for index in range(len(output[j])):
+                found = False
+                for f in files:
+                    #print(f, companylist[ctr]['name'])
+                    if companylist[ctr]["name"] == f:
+                        found = True 
+                        files[f].writelines(output[j][index] + '\n')
+                if not found:
+                    print("missed,",output[j][index], companylist[ctr]['name'])
+                ctr+=1
+
+
+               # file.close()
         
         
-        errors=  open(directory + "failed.txt", "w")
-        errors.writelines(output[-1])
-        errors.close()
+            #errors =  open(directory + "failed.txt", "w")
+            #errors.writelines(output[-1])
+            #errors.close()
  
     except:
         raise Exception("failed to save files")
@@ -216,9 +256,9 @@ if __name__ == "__main__":
    #print(output)
    
    if(param[4] == "GET"):
-       output = format_output(output,param[0])
+       output,companylist = format_output(output,param[0])
        #print("output", output)
-       save_files(output,param)
+       save_files(output,param, companylist)
 
 
 

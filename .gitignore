@@ -5,6 +5,9 @@
 
 # API Keys
 .key
+#venv
+**/env/
+**/venv/
 
 #Config
 .ini

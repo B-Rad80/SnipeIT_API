@@ -37,7 +37,7 @@ for i in catagories:
     y = json.loads(response.text)
     print(y)
 
-    for item in y["rows"]:
+    #for item in y["rows"]:
         
 
           

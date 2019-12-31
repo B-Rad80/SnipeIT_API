@@ -1,5 +1,5 @@
 pip==19.3.1
-setuptools==40.8.0
+setuptools==42.0.2
 certifi==2019.11.28
 chardet==3.0.4
 configparser==4.0.2
